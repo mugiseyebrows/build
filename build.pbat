@@ -1,0 +1,73 @@
+def download 
+    pushd %~dp0
+        # mingw
+        download(https://storage.googleapis.com/qt-binaries/x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z, x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z)
+        # qt modules
+        download(https://download.qt.io/official_releases/qt/5.15/5.15.2/submodules/qtbase-everywhere-src-5.15.2.zip, qtbase-everywhere-src-5.15.2.zip)
+        download(https://download.qt.io/official_releases/qt/5.15/5.15.2/submodules/qtsvg-everywhere-src-5.15.2.zip, qtsvg-everywhere-src-5.15.2.zip)
+        copy_dir(C:\Program Files\PostgreSQL\14\bin, postgresql-14\bin)
+        copy_dir(C:\Program Files\PostgreSQL\14\include, postgresql-14\include)
+    popd
+
+def unzip
+    pushd %~dp0
+        # mingw
+        unzip(x86_64-8.1.0-release-posix-seh-rt_v6-rev0.7z, mingw64)
+        unzip(qtbase-everywhere-src-5.15.2.zip, qtbase-everywhere-src-5.15.2, force)
+    popd
+
+def compile
+    pushd %~dp0
+        #rmdir /q /s Qt-5.15.2-mingw64
+        if "%SKIP_BASE%" neq "1" (
+            pushd qtbase-everywhere-src-5.15.2
+                #del /f config.cache
+                call configure -prefix %~dp0Qt-5.15.2-mingw64 -opensource -confirm-license -shared %SQL_PLUGINS% -platform win32-g++ -opengl desktop -release %NOMAKE% MYSQL_PREFIX=C:\mysql MYSQL_INCDIR=C:\mysql\include MYSQL_LIBDIR=C:\mysql\lib PSQL_INCDIR=%~dp0postgresql-14\include PSQL_LIBDIR=%~dp0postgresql-14\bin
+                #type qtbase-everywhere-src-5.15.2\config.log
+                mingw32-make -j2
+                mingw32-make install
+                #zip(postgresql-14, postgresql-14.zip)
+                #zip(qsqlpsql-win64, qsqlpsql-win64.zip)
+                #zip(qsqlmysql-win64, qsqlmysql-win64.zip)
+            popd
+        )
+        if "%SKIP_SVG%" neq "1" (
+            pushd qtsvg-everywhere-src-5.15.2
+                qmake
+                mingw32-make -j2
+                mingw32-make install
+            popd
+        )
+        
+        #del /f Qt-5.15.2-mingw64.zip
+        zip(Qt-5.15.2-mingw64, Qt-5.15.2-mingw64.zip)
+
+        mugideploy collect --dest qsqlmysql-mingw64 --skip Qt5Core.dll Qt5Sql.dll qt.conf --bin Qt-5.15.2-mingw64\plugins\sqldrivers\qsqlmysql.dll --no-vcredist
+        mugideploy collect --dest qsqlpsql-mingw64 --skip Qt5Core.dll Qt5Sql.dll qt.conf --bin Qt-5.15.2-mingw64\plugins\sqldrivers\qsqlpsql.dll --no-vcredist
+        zip(qsqlmysql-mingw64, qsqlmysql-mingw64.zip)
+        zip(qsqlpsql-mingw64, qsqlpsql-mingw64.zip)
+
+    popd
+
+def main
+    set_path(
+        C:\windows\system32,
+        C:\windows,
+        C:\Program Files\7-Zip,
+        %~dp0mingw64\bin,
+        C:\Strawberry\perl\bin,
+        %~dp0Qt-5.15.2-mingw64\bin,
+        %~dp0postgresql-14\bin,
+        C:\mysql\lib,
+        C:\Miniconda\python,
+        C:\Miniconda\Scripts,
+        %PATH%
+    )
+    set NOMAKE=-nomake tests -nomake examples
+    set SQL_PLUGINS=-plugin-sql-odbc -plugin-sql-psql -plugin-sql-mysql
+    pip install mugideploy
+
+order main download unzip compile
+debug off
+clean off
+curl on

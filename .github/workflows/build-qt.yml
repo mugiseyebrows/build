@@ -1,0 +1,21 @@
+name: Build Qt
+on: [push]
+jobs:
+  main:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+        name: checkout
+
+      - run: build.bat
+        shell: cmd
+        name: build qt
+
+      - uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            Qt-5.15.2-mingw64.zip
+            qsqlmysql-mingw64.zip
+            qsqlpsql-mingw64.zip
+        if: startsWith(github.ref, 'refs/tags/')
+        name: release
