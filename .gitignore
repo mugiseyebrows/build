@@ -1,0 +1,10 @@
+postgresql-14/
+*.zip
+*.7z
+mingw64/
+*.txt
+qtbase-everywhere-src-5.15.2/
+qtsvg-everywhere-src-5.15.2/
+qsqlmysql-mingw64/
+qsqlpsql-mingw64/
+Qt-5.15.2-mingw64/
